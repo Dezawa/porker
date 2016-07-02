@@ -13,7 +13,9 @@
 <br />
 <% if @hand %>
 入力カード ： <%= @hand.card %><br />
+<% unless  @hand && @hand.errors.any? %>
 手札の役　 :  <%= @hand.view["hand"] %><br />
+<% end %>
 <% end %>
 <p>
   配ったカードを JSON で<br>
