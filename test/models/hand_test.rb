@@ -107,32 +107,40 @@ class HandTest <  ActiveSupport::TestCase
    must "複数で、同じカードあり" do
      jsonstr =
        '{"cards": ["H1 H13 H12 H11 H10","H9 C9 S9 H12 C2","C13 D12 C11 H8 H7"]}'
-     violation = assert_raise(SootViolation){   Game.new(jsonstr)}
-     assert_equal "イカサマだ！ H1 H13 H12 H11 H10,H9"+
-                   " C9 S9 H12 C2,C13 D12 C11 H8 H7には同じカードが2枚以上ある",violation.message
+     assert_equal [" イカサマだ！ H1 H13 H12 H11 H10,H9 C9 S9 H12 C2,C13 D12"+
+       " C11 H8 H7には同じカードが2枚以上ある"], Game.new(jsonstr).errors.full_messages
      
    end
    must "複数で、同じカードあり-2" do
      jsonstr =
        '{"cards": ["H1 H13 H13 H11 H10","H9 C9 S9 H12 C2","C13 D12 C11 H8 H7"]}'
-     violation = assert_raise(SootViolation){  Game.new(jsonstr) }
-     assert_equal "イカサマだ！ H1 H13 H13 H11 H10には同じカードが2枚以上ある",violation.message
+     assert_equal [" イカサマだ！ H1 H13 H13 H11 H10には同じカードが2枚以上ある"],
+       Game.new(jsonstr).errors.full_messages
    end
    must "複数で、スーツ違いあり" do
      jsonstr =
        '{"cards": ["H1 H13 P3 H11 H10","H9 C9 S9 H12 C2","C13 D12 C11 H8 H7"]}'
-     violation = assert_raise(SootViolation){  Game.new(jsonstr) }
-     assert_equal  "PはCHDS 以外です",violation.message  
+      assert_equal  [" PはCHDS 以外です"], Game.new(jsonstr) .errors.full_messages
    end
   must "JSONが空" do
-    violation = assert_raise(SootViolation){  Game.new('{"cards": []}')}
-    assert_equal  "カードが配られていない",violation.message 
+    assert_equal  [" カードが配られていない"], Game.new('{"cards": []}').errors.full_messages
   end
   must "一部カード不足" do
     jsonstr =
       '{"cards": ["H1 H13 H12 H11","H9 C9 S9 H2 C2","C13 D12 C11 H8 H7"]}'
-     violation = assert_raise(SootViolation){  Game.new(jsonstr) }
-    assert_equal "手札が5枚じゃない", violation.message 
+    assert_equal [" 手札が5枚じゃない"],  Game.new(jsonstr) .errors.full_messages
   end
-  
+  JsonTest = Game.new  '{"cards": ["H1 H13 H12 H11 H10","H9 C9 S9 H2 C2","C13 D12 C11 H8 H7"]}'
+  must "keyが違う" do
+    violation =  assert_raise(SootViolation) { JsonTest.vlidate  '{cards: '}
+    assert_equal "key は 文字列 \"cards\" です。", violation.message
+  end
+  must "json形式が違う" do
+    violation =  assert_raise(SootViolation) { JsonTest.vlidate  '{"cards": [ '}
+    assert_equal '{ "cards" : [ ,,,,,] } という形式です', violation.message
+  end
+  must "[ ]内はカード" do
+    violation =  assert_raise(SootViolation) { JsonTest.vlidate  '{"cards": [  ] }' }
+    assert_equal '[ ] 内はカード5枚を表す文字列形式です', violation.message
+  end
 end

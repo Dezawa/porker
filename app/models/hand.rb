@@ -30,7 +30,6 @@ class Hand
 
   def cards
     return @cards if @cards
-pp  @card
     raise SootViolation,"カードデータが空です" if @card.blank?
     @cards = @card.split.map{|str| Card.new str }
     if @cards.group_by{|card| [card.soot,card.number]}.values.map(&:size).max>1
