@@ -13,7 +13,7 @@
 <br />
 <% if @hand %>
 入力カード ： <%= @hand.card %><br />
-手札の役　 :  <%= @hand.inspect["hand"] %><br />
+手札の役　 :  <%= @hand.view["hand"] %><br />
 <% end %>
 <p>
   配ったカードを JSON で<br>
