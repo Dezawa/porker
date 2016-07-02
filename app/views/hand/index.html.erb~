@@ -1,0 +1,6 @@
+<%= form_tag hand_pass %>
+カードは？ <%= text_field_tag :cards %>
+
+<% if @hand %>
+入力カード ： <%= @hand.card %>
+手札の役　 :  <%= @hand.inspect.hand %>

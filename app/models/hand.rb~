@@ -1,0 +1,119 @@
+#!/usr/local/bin/ruby
+# -*- coding: utf-8 -*-
+class SootViolation < StandardError ; end
+
+require "pp"
+require "json"
+class Game
+  extend ActiveModel::Naming
+
+  attr_reader :hands,:errors
+  # {cards: [ "H1 H13 H12 H11 H10”, "H9 C9 S9 H2 C2”, "C13 D12 C11 H8 H7 ]} 
+  def initialize(hands_json)
+    @errors = ActiveModel::Errors.new(self)
+    @hands = JSON.parse(hands_json)["cards"].
+      map{|card_str| Hand.new(card_str)}.
+      sort_by{|hand| -hand.point}
+    cards = @hands.map{|hand| hand.cards.map(&:name)}.flatten
+    if cards.group_by{|name| name }.values.map(&:size).max>1
+      errors.add(:nil,"イカサマだ！ #{@hands.map(&:card).join(',')}には同じカードが2枚以上ある")
+    end
+  end
+  
+  def order
+    orders = @hands.map(&:inspect)
+    orders.first["best"] = true
+    orders
+  end
+  def self.human_attribute_name(a,b)
+    ""
+  end
+end
+
+class Card
+  extend ActiveModel::Naming
+  attr_reader :soot ,:number,:name,:errors
+  def initialize(arg)
+    @errors = ActiveModel::Errors.new(self)
+    @name = arg
+    @soot = arg[0,1].upcase
+    @number = arg[1..-1].to_i
+    raise SootViolation,  "#{@soot}はCHDS 以外です"   unless "CHDS".include?(@soot)
+    raise SootViolation,  "#{number}が1～13 以外です"  unless (1..13).include?(@number)
+  end
+  def <=> other
+    ret = self.soot <=> other.soot
+    ret == 0 ? self.number <=> other.number : ret
+  end
+  def self.human_attribute_name(a,b)
+    ""
+  end
+end
+class Hand
+  extend ActiveModel::Naming
+  Yaku = %w(ハイカード ワンペア ツーペア スリー・オブ・ア・カインド
+            ストレート フラッシュ フルハウス フォー・オブ・ア・カインド
+            ストレートフラッシュ)
+  attr_accessor :cards,:card,:errors
+  
+  def initialize( cards_string )
+    @errors = ActiveModel::Errors.new(self)
+    @card = cards_string
+    @cards = cards_string.split.map{|str| Card.new str }
+    if @cards.group_by{|card| [card.soot,card.number]}.values.map(&:size).max>1
+      # raise SootViolation,"イカサマだ！ #{@card}には同じカードが2枚以上ある"
+      errors.add( :nil, "イカサマだ！ #{@card}には同じカードが2枚以上ある")
+    end
+  rescue SootViolation  => e
+    pp e
+    errors.add( :nil, e.message )
+  end
+
+  def inspect
+    {"card" => @card ,"hand" => Yaku[point]}
+  end
+  
+  def point
+    @group_number = cards.group_by{|card| card.number}
+    @group_soot   = cards.group_by{|card| card.soot}
+    #return "ロイヤルストレートフラッシュ" if royal_straight_flush?
+    straight_flush? || four_cards? || full_house? ||
+      flush? || straight? || three_cards? || two_pair? ||
+      one_pair? || 0
+  end
+  def royal_straight_flush?
+    straight_flush? &&  @cards.map(&:number).sort == [1, 10,11,12,13] && 9
+  end
+  def straight_flush?
+    straight? && flush? && 8
+  end
+  
+  def four_cards?
+    @group_number.values.map(&:size).sort == [1,4] && 7
+  end
+  def full_house?
+    @group_number.values.map(&:size).sort == [2,3] && 6
+  end
+  def flush?
+    @group_soot.size == 1 && 5
+  end
+  def straight?
+    sorted = @cards.map(&:number).sort
+    ((sorted[0] .. sorted[4]).to_a == sorted || sorted == [1,10,11,12,13]) && 4
+  end
+  def three_cards?
+    @group_number.values.map(&:size).sort == [1,1,3] && 3
+  end
+  def one_pair?
+    @group_number.size == 4 && 1
+  end
+
+  # three cards を見てるから、これでOK
+  def two_pair?
+    @group_number.size == 3 && 2
+  end
+  def self.human_attribute_name(a,b)
+    ""
+  end
+end
+

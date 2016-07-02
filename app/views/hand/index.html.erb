@@ -1,0 +1,38 @@
+
+<% if @hand && @hand.errors.any? %>
+    <% @hand.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_tag hand_path %>
+カードは？ <%= text_field_tag :cards %>
+<%= submit_tag "GO" %></form>
+<br />
+<% if @hand %>
+入力カード ： <%= @hand.card %><br />
+手札の役　 :  <%= @hand.inspect["hand"] %><br />
+<% end %>
+<p>
+  配ったカードを JSON で<br>
+<% if @game && @game.errors.any? %>
+    <% @game.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+
+  <%= form_tag game_path %>
+  <%= submit_tag "GO" %>
+<br />
+<br />
+<%= text_area_tag :card_json, '{ "cards": [  ] }',size: "120x5" %>
+</form>
+<% if @game %>
+結果 ： <%= @game.json %>
+
+<% end %>
+  
