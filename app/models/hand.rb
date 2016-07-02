@@ -1,5 +1,6 @@
 #!/usr/local/bin/ruby
 # -*- coding: utf-8 -*-
+require "pp"
 class SootViolation < StandardError ; end
 
 class Hand
@@ -8,27 +9,40 @@ class Hand
             ストレート フラッシュ フルハウス フォー・オブ・ア・カインド
             ストレートフラッシュ データエラー)
   attr_accessor :cards,:card,:errors
+  def self.create( cards_string )
+    begin
+      hand = new cards_string
+      hand.cards
+    rescue SootViolation => e
+      #hand.errors.add :nil, e.message
+    end
+    hand
+  end
   
   def initialize( cards_string )
     @errors = ActiveModel::Errors.new(self)
     @card = cards_string
-    @cards = cards_string.split.map{|str| Card.new str }
+  end
+
+  def view
+    {"card" => @card ,"hand" => Yaku[point||-1]}
+  end
+
+  def cards
+    return @cards if @cards
+pp  @card
+    raise SootViolation,"カードデータが空です" if @card.blank?
+    @cards = @card.split.map{|str| Card.new str }
     if @cards.group_by{|card| [card.soot,card.number]}.values.map(&:size).max>1
-      # raise SootViolation,"イカサマだ！ #{@card}には同じカードが2枚以上ある"
-      errors.add( :nil, "イカサマだ！ #{@card}には同じカードが2枚以上ある")
+      raise SootViolation,"イカサマだ！ #{@card}には同じカードが2枚以上ある"
     end
-    if cards.size != 5
-      errors.add( :nil, "手札が5枚じゃない")
-    end
+    raise SootViolation, "手札が5枚じゃない" if cards.size != 5
+    @cards
   rescue SootViolation  => e
     errors.add( :nil, e.message )
     @cards = nil
+    raise
   end
-
-  def inspect
-    {"card" => @card ,"hand" => Yaku[point||-1]}
-  end
-  
   def point
     return  nil unless cards
       

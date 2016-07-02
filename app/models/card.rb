@@ -12,6 +12,10 @@ class Card
     @number = arg[1..-1].to_i
     raise SootViolation,  "#{@soot}はCHDS 以外です"   unless "CHDS".include?(@soot)
     raise SootViolation,  "#{number}が1～13 以外です"  unless (1..13).include?(@number)
+  rescue SootViolation  => e
+    errors.add( :nil, e.message )
+    @cards = nil
+    raise
   end
   def <=> other
     ret = self.soot <=> other.soot

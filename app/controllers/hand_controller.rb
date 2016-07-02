@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
+class SootViolation < StandardError ; end
 class HandController < ApplicationController
   def index
   end
     
   def hand
-    unless params[:cards].blank?
-      @hand = Hand.new(params[:cards])
+    @hand = Hand.create(params[:cards])
+   # if @hand.errors.empty?
       render action: :index
-    else
-      redirect_to :index
-    end
+    #else SootViolation
+   #   redirect_to :index
+   # end
   end
 
   def game
-    unless params[:card_json].blank?
-      @game = Game.new(params[:card_json])
+    @game = Game.new(params[:card_json])
       render action: :index
-    else
-      redirect_to :index
-    end
+  #rescue SootViolation
+  #  redirect_to :index
   end
 end
